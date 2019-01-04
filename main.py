@@ -137,7 +137,8 @@ for n in range(1, 10):
 # Now I'm gonna to do the fitting. I'm gonna start by doing a train/test split
 
 train_x, valid_x, train_y, valid_y = model_selection.train_test_split(cleaned_data[x_cols],
-                                                                      cleaned_data['category'])
+                                                                      cleaned_data['category'],
+                                                                      stratify=cleaned_data['category'])
 # let's use that blob vectorizer to build the features
 
 blob_vectorizer = TfidfVectorizer(analyzer='word', stop_words='english')
@@ -227,5 +228,36 @@ plot_confusion_matrix(oos_confusion_matrix, classes=oos_labels, normalize=True,
                       title='Normalized Out-of-Sample Confusion Matrix')
 plt.show()
 
-# yeah, looks like we have overfitting on popular categories. We need to do some stratified sampling and weighting.
+# yeah, looks like we have overfitting on popular categories. We need to try some weighting if we want to
+# improve performance.
+
+
+params = {'n_estimators': 100, 'class_weight':'balanced_subsample',
+          'min_samples_split': 10}  # removed the depth restriction,
+#  which might increase overfitting, instead requiring min-samples to allow it to take best advantage of
+# the number of features
+RFC = RandomForestClassifier(**params)  # Using a random forest, because I like them
+RFC.fit(X_train_final, train_y)
+insample_score = RFC.score(X_train_final, train_y)  # getting the score
+insample_predict = RFC.predict(X_train_final)
+print(insample_score)
+oos_score = RFC.score(X_valid_final, valid_y)
+oos_predict = RFC.predict(X_valid_final)
+print(oos_score)
+
+insample_confusion_matrix = metrics.confusion_matrix(train_y, insample_predict, labels=insample_labels)
+oos_confusion_matrix = metrics.confusion_matrix(valid_y, oos_predict, labels=oos_labels)
+
+plt.figure(figsize=(13, 13))
+plot_confusion_matrix(insample_confusion_matrix, classes=insample_labels, normalize=True,
+                      title='Normalized In-Sample Confusion Matrix')
+plt.show()
+
+plt.figure(figsize=(13, 13))
+
+plot_confusion_matrix(oos_confusion_matrix, classes=oos_labels, normalize=True,
+                      title='Normalized Out-of-Sample Confusion Matrix')
+plt.show()
+
+# score went down. I don't notice a big gain in accuracy, which is disappointing, but expected.
 #

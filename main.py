@@ -115,9 +115,9 @@ cleaned_data['day_in_month'] = cleaned_data.date.dt.day
 
 def make_fourier_value(x, max_val, min_val, sin_cos='sin', k=1):
     if sin_cos.lower().strip() == 'sin':
-        val = np.sin(2 * x * np.pi * k / (max_val - min_val +1 ))
+        val = np.sin(2 * x * np.pi * k / (max_val - min_val + 1))
     elif sin_cos.lower().strip() == 'cos':
-        val = np.sin(2 * x * np.pi * k / (max_val - min_val +1 ))
+        val = np.sin(2 * x * np.pi * k / (max_val - min_val + 1))
     else:
         val = np.nan
     return val
@@ -232,7 +232,7 @@ plt.show()
 # improve performance.
 
 
-params = {'n_estimators': 100, 'class_weight':'balanced_subsample',
+params = {'n_estimators': 100, 'class_weight': 'balanced_subsample',
           'min_samples_split': 10}  # removed the depth restriction,
 #  which might increase overfitting, instead requiring min-samples to allow it to take best advantage of
 # the number of features
@@ -260,4 +260,16 @@ plot_confusion_matrix(oos_confusion_matrix, classes=oos_labels, normalize=True,
 plt.show()
 
 # score went down. I don't notice a big gain in accuracy, which is disappointing, but expected.
+# I think we'll keep the weighted model and run a cross-validation
 #
+params = {'n_estimators': 100, 'max_depth': 500}
+RFC = RandomForestClassifier(**params)
+blob_vectorizer = TfidfVectorizer(analyzer='word', stop_words='english')
+blob_transformer = blob_vectorizer.fit(cleaned_data['text_blob'])
+transformed_X = blob_transformer.transform(cleaned_data['text_blob'])
+final_X = hstack((transformed_X, csr_matrix(cleaned_data[x_cols].values.astype(float))))
+final_y = cleaned_data['category']
+xval_results = model_selection.cross_val_score(RFC, final_X, final_y, cv=3)
+# very poor cross-validation results. The overfitting problem is worse than expected.
+# now to do some data visualization :
+

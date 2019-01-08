@@ -8,6 +8,7 @@ import numpy as np
 import functools
 from scipy.sparse import hstack, csr_matrix
 from sklearn.ensemble import RandomForestClassifier
+from sklearn.decomposition import TruncatedSVD
 import itertools
 
 # let's read in the data and take a gander at it
@@ -260,7 +261,7 @@ plot_confusion_matrix(oos_confusion_matrix, classes=oos_labels, normalize=True,
 plt.show()
 
 # score went down. I don't notice a big gain in accuracy, which is disappointing, but expected.
-# I think we'll keep the weighted model and run a cross-validation
+# I think we'll keep the unweighted model and run a cross-validation
 #
 params = {'n_estimators': 100, 'max_depth': 500}
 RFC = RandomForestClassifier(**params)
@@ -271,5 +272,4 @@ final_X = hstack((transformed_X, csr_matrix(cleaned_data[x_cols].values.astype(f
 final_y = cleaned_data['category']
 xval_results = model_selection.cross_val_score(RFC, final_X, final_y, cv=3)
 # very poor cross-validation results. The overfitting problem is worse than expected.
-# now to do some data visualization :
 
